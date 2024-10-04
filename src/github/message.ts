@@ -1,7 +1,7 @@
 import {ContextBlock} from '@slack/web-api'
 import {emoji} from '../slack/mrkdwn'
-import {MessageAuthor} from '../slack/types'
-import {JobStatus, Message, Text} from './types'
+import {MessageAuthor, PostMessageArguments} from '../slack/types'
+import {JobStatus, Text} from './types'
 
 interface Dependencies {
   text: Text
@@ -13,7 +13,7 @@ export function createMessage({
   text,
   contextBlock,
   author
-}: Dependencies): Message {
+}: Dependencies): PostMessageArguments {
   return {
     icon_url: author?.icon_url,
     username: author?.username ? `${author.username} (via GitHub)` : undefined,

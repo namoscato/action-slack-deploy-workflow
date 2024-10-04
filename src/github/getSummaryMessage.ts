@@ -1,11 +1,11 @@
 import * as github from '@actions/github'
 import {intervalToDuration} from 'date-fns'
 import {bold, emoji, link} from '../slack/mrkdwn'
-import {Link, MessageAuthor} from '../slack/types'
+import {Link, MessageAuthor, PostMessageArguments} from '../slack/types'
 import {dateFromTs} from '../slack/utils'
 import {getContextBlock} from './getContextBlock'
 import {createMessage, emojiFromStatus} from './message'
-import {JobStatus, Message, OctokitClient, Text} from './types'
+import {JobStatus, OctokitClient, Text} from './types'
 import {
   SupportedContext,
   assertUnsupportedEvent,
@@ -35,7 +35,7 @@ export async function getSummaryMessage({
   octokit,
   options,
   author
-}: Dependencies): Promise<Message> {
+}: Dependencies): Promise<PostMessageArguments> {
   const text = await getText(octokit, options?.status ?? null, author)
 
   const duration = options

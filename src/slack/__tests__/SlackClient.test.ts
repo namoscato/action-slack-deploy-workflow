@@ -4,6 +4,7 @@ import {SlackClient} from '../SlackClient'
 import {Member} from '../types'
 
 const listUsers = jest.fn()
+const postMessage = jest.fn()
 
 jest.mock('@slack/web-api', () => ({
   ErrorCode: {
@@ -14,6 +15,9 @@ jest.mock('@slack/web-api', () => ({
     on(): void {
       // noop
     }
+    chat = {
+      postMessage
+    }
     users = {
       list: listUsers
     }
@@ -22,13 +26,18 @@ jest.mock('@slack/web-api', () => ({
 }))
 
 describe('SlackClient', () => {
-  const client = new SlackClient({
-    token: 'TOKEN',
-    channel: 'CHANNEL'
-  })
+  let client: SlackClient
 
   describe('getRealUsers', () => {
     let users: Member[] | null
+
+    beforeEach(() => {
+      client = new SlackClient({
+        token: 'TOKEN',
+        channelPrimary: 'CHANNEL',
+        channelErrors: undefined
+      })
+    })
 
     describe('unexpected response', () => {
       let error: unknown
@@ -80,6 +89,146 @@ describe('SlackClient', () => {
 
       it('should filter real users', () => {
         expect(users).toStrictEqual([{id: 'U1'}, {id: 'U2', is_bot: false}])
+      })
+    })
+  })
+
+  describe('postThreadedMessage', () => {
+    describe('only primary channel configured', () => {
+      beforeEach(() => {
+        client = new SlackClient({
+          token: 'TOKEN',
+          channelPrimary: 'CHANNEL',
+          channelErrors: undefined
+        })
+      })
+
+      describe('successful', () => {
+        beforeEach(async () => {
+          await client.postThreadedMessage({
+            icon_url: undefined,
+            username: undefined,
+            unfurl_links: false,
+            text: 'TEXT',
+            blocks: [],
+            successful: true,
+            thread_ts: 'THREAD_TS'
+          })
+        })
+
+        it('should post message in primary channel thread', () => {
+          expect(postMessage).toHaveBeenCalledTimes(1)
+          expect(postMessage).toHaveBeenCalledWith({
+            icon_url: undefined,
+            username: undefined,
+            unfurl_links: false,
+            text: 'TEXT',
+            blocks: [],
+            channel: 'CHANNEL',
+            thread_ts: 'THREAD_TS'
+          })
+        })
+      })
+
+      describe('error', () => {
+        beforeEach(async () => {
+          await client.postThreadedMessage({
+            icon_url: undefined,
+            username: undefined,
+            unfurl_links: false,
+            text: 'TEXT',
+            blocks: [],
+            successful: false,
+            thread_ts: 'THREAD_TS'
+          })
+        })
+
+        it('should broadcast message to primary channel', () => {
+          expect(postMessage).toHaveBeenCalledWith({
+            icon_url: undefined,
+            username: undefined,
+            unfurl_links: false,
+            text: 'TEXT',
+            blocks: [],
+            channel: 'CHANNEL',
+            thread_ts: 'THREAD_TS',
+            reply_broadcast: true
+          })
+        })
+      })
+    })
+
+    describe('error channel configured', () => {
+      beforeEach(() => {
+        client = new SlackClient({
+          token: 'TOKEN',
+          channelPrimary: 'CHANNEL',
+          channelErrors: 'CHANNEL_ERRORS'
+        })
+      })
+
+      describe('successful', () => {
+        beforeEach(async () => {
+          await client.postThreadedMessage({
+            icon_url: undefined,
+            username: undefined,
+            unfurl_links: false,
+            text: 'TEXT',
+            blocks: [],
+            successful: true,
+            thread_ts: 'THREAD_TS'
+          })
+        })
+
+        it('should post message in primary channel thread', () => {
+          expect(postMessage).toHaveBeenCalledWith({
+            icon_url: undefined,
+            username: undefined,
+            unfurl_links: false,
+            text: 'TEXT',
+            blocks: [],
+            channel: 'CHANNEL',
+            thread_ts: 'THREAD_TS'
+          })
+        })
+      })
+
+      describe('error', () => {
+        beforeEach(async () => {
+          await client.postThreadedMessage({
+            icon_url: undefined,
+            username: undefined,
+            unfurl_links: false,
+            text: 'TEXT',
+            blocks: [],
+            successful: false,
+            thread_ts: 'THREAD_TS'
+          })
+        })
+
+        it('should post message to error channel', () => {
+          expect(postMessage).toHaveBeenCalledTimes(2)
+          expect(postMessage).toHaveBeenCalledWith({
+            icon_url: undefined,
+            username: undefined,
+            unfurl_links: false,
+            text: 'TEXT',
+            blocks: [],
+            channel: 'CHANNEL_ERRORS'
+          })
+        })
+
+        it('should post message to primary channel thread', () => {
+          expect(postMessage).toHaveBeenCalledWith({
+            icon_url: undefined,
+            username: undefined,
+            unfurl_links: false,
+            text: 'TEXT',
+            blocks: [],
+            channel: 'CHANNEL',
+            thread_ts: 'THREAD_TS'
+          })
+        })
       })
     })
   })

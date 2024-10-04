@@ -24,6 +24,7 @@ describe('postMessage', () => {
 
     slack = {
       postMessage: jest.fn(async () => 'TS'),
+      postThreadedMessage: jest.fn(async () => 'TS'),
       updateMessage: jest.fn(async () => undefined)
     } as unknown as SlackClient
 
@@ -336,9 +337,9 @@ describe('postMessage', () => {
         })
       })
 
-      it('should post slack message', () => {
-        expect(slack.postMessage).toHaveBeenCalledTimes(1)
-        expect(slack.postMessage).toHaveBeenCalledWith({
+      it('should post threaded slack message', () => {
+        expect(slack.postThreadedMessage).toHaveBeenCalledTimes(1)
+        expect(slack.postThreadedMessage).toHaveBeenCalledWith({
           icon_url: 'github.com/namoscato',
           username: 'namoscato (via GitHub)',
           unfurl_links: false,
@@ -366,9 +367,13 @@ describe('postMessage', () => {
               ]
             }
           ],
-          reply_broadcast: false,
+          successful: true,
           thread_ts: '1662768000' // 2022-09-10T00:00:00.000Z
         })
+      })
+
+      it('should not post summary message', () => {
+        expect(slack.postMessage).not.toHaveBeenCalled()
       })
 
       it('should not update summary message', () => {
@@ -388,7 +393,7 @@ describe('postMessage', () => {
       })
 
       it('should post slack message', () => {
-        expect(slack.postMessage).toHaveBeenCalledWith(
+        expect(slack.postThreadedMessage).toHaveBeenCalledWith(
           expect.objectContaining({
             text: 'Cancelled JOB 2',
             blocks: expect.arrayContaining([
@@ -400,7 +405,7 @@ describe('postMessage', () => {
                 }
               }
             ]),
-            reply_broadcast: true
+            successful: false
           })
         )
       })
@@ -456,10 +461,10 @@ describe('postMessage', () => {
       })
 
       it('should post slack message', () => {
-        expect(slack.postMessage).toHaveBeenCalledWith(
+        expect(slack.postThreadedMessage).toHaveBeenCalledWith(
           expect.objectContaining({
             text: 'Finished JOB 2',
-            reply_broadcast: false
+            successful: true
           })
         )
       })
@@ -506,10 +511,10 @@ describe('postMessage', () => {
       })
 
       it('should post slack message', () => {
-        expect(slack.postMessage).toHaveBeenCalledWith(
+        expect(slack.postThreadedMessage).toHaveBeenCalledWith(
           expect.objectContaining({
             text: 'Failed JOB 2',
-            reply_broadcast: true
+            successful: false
           })
         )
       })
@@ -558,7 +563,7 @@ describe('postMessage', () => {
       })
 
       it('should post slack message', () => {
-        expect(slack.postMessage).toHaveBeenCalledWith(
+        expect(slack.postThreadedMessage).toHaveBeenCalledWith(
           expect.objectContaining({
             text: 'Finished JOB 2',
             blocks: expect.arrayContaining([
@@ -592,7 +597,7 @@ describe('postMessage', () => {
       })
 
       it('should post slack message', () => {
-        expect(slack.postMessage).toHaveBeenCalledWith(
+        expect(slack.postThreadedMessage).toHaveBeenCalledWith(
           expect.objectContaining({
             text: 'Finished JOB 2',
             blocks: expect.arrayContaining([

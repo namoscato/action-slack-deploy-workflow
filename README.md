@@ -12,7 +12,7 @@ Post [GitHub Action](https://github.com/features/actions) deploy workflow progre
 
 - Posts summary message at beginning of the deploy workflow, surfacing commit message and author
 - Maps GitHub commit author to Slack user by full name, mentioning them in the summary message
-- Threads intermediate stage completions, sending unexpected failures back to the channel
+- Threads intermediate stage completions, broadcasting unexpected errors back to the primary channel by default
 - Updates summary message duration at conclusion of the workflow
 - Supports `pull_request`, `push`, `release`, `schedule`, and `workflow_dispatch` [event types](https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows)
 
@@ -87,16 +87,25 @@ jobs:
 1. As your workflow progresses, use this action with the `thread_ts` input to post threaded replies.
 1. Denote the last step with the `conclusion` input to update the initial message's status.
 
-## Environment Variables
+### Error Handling
 
-Both environment variables are _required_.
+There are two error handling "modes" (when a job has failed or been cancelled):
 
-| variable                 | description                |
-| ------------------------ | -------------------------- |
-| `SLACK_DEPLOY_BOT_TOKEN` | Slack Bot User OAuth Token |
-| `SLACK_DEPLOY_CHANNEL`   | Slack Channel ID           |
+1. With the single required `SLACK_DEPLOY_CHANNEL` configured, unsuccessful threaded replies will be broadcasted back to this channel.
 
-## Inputs
+1. When `SLACK_DEPLOY_CHANNEL_ERRORS` is _also_ configured, unsuccessful jobs will additionally notify this configured errors channel.
+
+   In this mode, intermediate stage completions will still be threaded in `SLACK_DEPLOY_CHANNEL`, but unsuccessful messages will no longer be sent back to the channel. Therefore, `SLACK_DEPLOY_CHANNEL` effectively serves as a deploy event stream where each deploy is represented by a single channel message.
+
+### Environment Variables
+
+| variable                      | description                             |
+| ----------------------------- | --------------------------------------- |
+| `SLACK_DEPLOY_BOT_TOKEN`      | **Required** Slack Bot User OAuth Token |
+| `SLACK_DEPLOY_CHANNEL`        | **Required** Primary Slack Channel ID   |
+| `SLACK_DEPLOY_CHANNEL_ERRORS` | (Optional) Error Slack Channel ID       |
+
+### Inputs
 
 | input          | description                                                                                                                                                              |
 | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -105,7 +114,7 @@ Both environment variables are _required_.
 | `github_token` | Repository `GITHUB_TOKEN` or personal access token secret; defaults to [`github.token`](https://docs.github.com/en/actions/learn-github-actions/contexts#github-context) |
 | `status`       | The current status of the job; defaults to [`job.status`](https://docs.github.com/en/actions/learn-github-actions/contexts#job-context)                                  |
 
-## Outputs
+### Outputs
 
 | output | description                |
 | ------ | -------------------------- |

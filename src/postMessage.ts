@@ -34,7 +34,7 @@ export async function postMessage({
 
   const status = getInput('status', {required: true})
   const now = new Date()
-  const {successful, ...stageMessage} = await getStageMessage({
+  const stageMessage = await getStageMessage({
     octokit,
     status,
     now,
@@ -42,9 +42,8 @@ export async function postMessage({
   })
 
   info(`Posting stage message in thread: ${threadTs}`)
-  await slack.postMessage({
+  await slack.postThreadedMessage({
     ...stageMessage,
-    reply_broadcast: !successful,
     thread_ts: threadTs
   })
 
